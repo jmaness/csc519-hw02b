@@ -56,15 +56,34 @@ def gradient_check():
     model = network2.Network([784, 20, 10])
     model.gradient_check(training_data=train_data, layer_id=1, unit_id=5, weight_id=3)
 
+    #
+    # l = 1
+    # for w in range(network[l]):
+    #     print("layer_id: {}, unit_id: {}, weight_id: {}".format(l, 5, w))
+    #     model.gradient_check(training_data=train_data, layer_id=l, unit_id=5, weight_id=w)
+
+    # for l in range(3):
+    #     for u in range(network[l]):
+    #         for w in range(network[l]):
+    #             print("layer_id: {}, unit_id: {}, weight_id: {}".format(l, u, w))
+    #             try:
+    #                 model.gradient_check(training_data=train_data, layer_id=l, unit_id=u, weight_id=w)
+    #             except IndexError:
+    #                 print("out of bounds")
+    #
+    #             print("======================================================")
+
 def main():
     # load train_data, valid_data, test_data
     train_data, valid_data, test_data = load_data()
     # construct the network
     model = network2.Network([784, 20, 10])
+    num_epochs = 100
+
     # train the network using SGD
-    model.SGD(
+    evaluation_cost, evaluation_accuracy, training_cost, training_accuracy =    model.SGD(
         training_data=train_data,
-        epochs=100,
+        epochs=num_epochs,
         mini_batch_size=128,
         eta=1e-3,
         lmbda = 0.0,
@@ -73,6 +92,40 @@ def main():
         monitor_evaluation_accuracy=True,
         monitor_training_cost=True,
         monitor_training_accuracy=True)
+
+    # model.save("model_784_20_10.json")
+
+    # model = network2.load("model_784_20_10.json")
+    #
+    # training_accuracy = model.accuracy(train_data, convert=True)
+    # training_cost = model.total_cost(train_data, 0.0)
+    # evaluation_accuracy = model.accuracy(valid_data)
+    # evaluation_cost = model.total_cost(valid_data, 0.0, convert=True)
+
+    training_accuracy_percentage = list(map(lambda x: x / len(train_data[0]), training_accuracy))
+    validation_accuracy_percentage = list(map(lambda x: x / len(valid_data[0]), evaluation_accuracy))
+
+
+    epochs = list(range(num_epochs))
+    fig = plt.figure()
+
+    axes1 = fig.add_subplot(121)
+    axes1.plot(epochs, evaluation_cost, 'g', label='Validation')
+    axes1.plot(epochs, training_cost, 'b', label='Training')
+    axes1.set_ylabel('Loss')
+    axes1.set_xlabel('Epochs')
+    axes1.legend()
+
+    axes2 = fig.add_subplot(122)
+    axes2.plot(epochs, np.array(validation_accuracy_percentage), 'g', label='Validation')
+    axes2.plot(epochs, np.array(training_accuracy_percentage), 'b', label='Training')
+    axes2.set_ylabel('Accuracy')
+    axes2.set_xlabel('Epochs')
+    axes2.legend()
+
+    fig.title('Prior to optimization')
+    plt.show()
+
 
 if __name__ == '__main__':
     FLAGS = get_args()
