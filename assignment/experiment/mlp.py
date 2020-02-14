@@ -12,6 +12,9 @@ sys.path.append('../')
 import src.network2 as network2
 import src.mnist_loader as loader
 import src.activation as act
+import pandas as pd
+
+from functools import reduce
 
 DATA_PATH = '../../data/'
 
@@ -77,7 +80,7 @@ def main():
     # load train_data, valid_data, test_data
     train_data, valid_data, test_data = load_data()
     # construct the network
-    model = network2.Network([784, 20, 10])
+    model = network2.Network([784, 120, 20, 10])
     num_epochs = 100
 
     # train the network using SGD
@@ -123,8 +126,19 @@ def main():
     axes2.set_xlabel('Epochs')
     axes2.legend()
 
-    fig.title('Prior to optimization')
     plt.show()
+
+    # Compute test accuracy
+    columns = list(range(10))
+    df = pd.DataFrame(columns=columns)
+
+    for data in test_data[0]:
+        prediction = model.feedforward(data)
+        temp = pd.DataFrame(prediction.transpose(), columns=columns)
+        df.append(temp)
+
+    test_accuracy = model.accuracy(test_data) / len(test_data[0])
+    print("Test accuracy: {:.2%}".format(test_accuracy))
 
 
 if __name__ == '__main__':
