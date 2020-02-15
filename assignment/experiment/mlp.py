@@ -59,36 +59,19 @@ def gradient_check():
     model = network2.Network([784, 20, 10])
     model.gradient_check(training_data=train_data, layer_id=1, unit_id=5, weight_id=3)
 
-    #
-    # l = 1
-    # for w in range(network[l]):
-    #     print("layer_id: {}, unit_id: {}, weight_id: {}".format(l, 5, w))
-    #     model.gradient_check(training_data=train_data, layer_id=l, unit_id=5, weight_id=w)
-
-    # for l in range(3):
-    #     for u in range(network[l]):
-    #         for w in range(network[l]):
-    #             print("layer_id: {}, unit_id: {}, weight_id: {}".format(l, u, w))
-    #             try:
-    #                 model.gradient_check(training_data=train_data, layer_id=l, unit_id=u, weight_id=w)
-    #             except IndexError:
-    #                 print("out of bounds")
-    #
-    #             print("======================================================")
-
 def main():
     # load train_data, valid_data, test_data
     train_data, valid_data, test_data = load_data()
     # construct the network
-    model = network2.Network([784, 120, 20, 10])
-    num_epochs = 100
+    model = network2.Network([784, 80, 10])
+    num_epochs = 125
 
     # train the network using SGD
     evaluation_cost, evaluation_accuracy, training_cost, training_accuracy =    model.SGD(
         training_data=train_data,
         epochs=num_epochs,
         mini_batch_size=128,
-        eta=1e-3,
+        eta=0.0015,
         lmbda = 0.0,
         evaluation_data=valid_data,
         monitor_evaluation_cost=True,
@@ -96,19 +79,11 @@ def main():
         monitor_training_cost=True,
         monitor_training_accuracy=True)
 
-    # model.save("model_784_20_10.json")
-
-    # model = network2.load("model_784_20_10.json")
-    #
-    # training_accuracy = model.accuracy(train_data, convert=True)
-    # training_cost = model.total_cost(train_data, 0.0)
-    # evaluation_accuracy = model.accuracy(valid_data)
-    # evaluation_cost = model.total_cost(valid_data, 0.0, convert=True)
-
+    # Compute accuracy percentages
     training_accuracy_percentage = list(map(lambda x: x / len(train_data[0]), training_accuracy))
     validation_accuracy_percentage = list(map(lambda x: x / len(valid_data[0]), evaluation_accuracy))
 
-
+    # Plot training and validation loss and accuracy vs. epochs
     epochs = list(range(num_epochs))
     fig = plt.figure()
 
@@ -135,10 +110,24 @@ def main():
     for data in test_data[0]:
         prediction = model.feedforward(data)
         temp = pd.DataFrame(prediction.transpose(), columns=columns)
-        df.append(temp)
+        df = df.append(temp)
+
+    df.to_csv("predictions_raw.csv", index=False, header=False)
 
     test_accuracy = model.accuracy(test_data) / len(test_data[0])
     print("Test accuracy: {:.2%}".format(test_accuracy))
+
+    # One-hot encoding of predictions for the test set
+    for i in range(df.shape[0]):
+        maximum = df.iloc[i].max()
+        for j in range(df.shape[1]):
+            if df.iloc[i][j] == maximum:
+                df.iloc[i][j] = 1
+            else:
+                df.iloc[i][j] = 0
+
+    df = df.astype(int)
+    df.to_csv("predictions.csv", index=False, header=False)
 
 
 if __name__ == '__main__':
